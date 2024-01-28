@@ -19,4 +19,8 @@ podman run --cap-add net_raw --cap-add net_admin <other options> <container-name
 
 run a bash inside the container with the necessary capabilities enabled, an assigned name, as well as with an interactive tty open. The container is also removed after exiting.
 
-```podman run --cap-add net_raw --cap-add net_admin --rm --name netadmincontainer -ti localhost/adminubuntu:latest bash```
+```bash
+podman run --cap-add net_raw --cap-add net_admin \
+    --rm --name netadmincontainer \
+    -ti localhost/adminubuntu:latest bash
+```
