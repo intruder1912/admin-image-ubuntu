@@ -2,6 +2,13 @@
 
 an image based on ubuntu its for use as an admin machine to keep my MacBook as clean as possible
 
+---
+**NOTE**
+
+the image is now created as an AARCH64 container image!
+
+---
+
 ## usage
 
 ### for network administration
