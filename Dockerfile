@@ -1,6 +1,6 @@
-FROM --platform=linux/arm64 ubuntu:24.04
-LABEL doblander.org:image-use admin
-ENV USER root
+FROM --platform="linux/arm64" ubuntu:24.04
+LABEL doblander.org:image-use=admin
+ENV USER=root
 ADD "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" "awscliv2.zip" 
 RUN apt-get update \
       && apt-get upgrade -y \ 
@@ -10,8 +10,9 @@ RUN apt-get update \
         iproute2 \
         iputils-ping \
         net-tools \
-        nmap \ 
+        nmap \
         npm \
+        terraform \
         unzip \
       && apt-get clean \
       && npm i -g aws-cdk \
