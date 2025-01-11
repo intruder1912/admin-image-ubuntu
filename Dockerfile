@@ -1,4 +1,4 @@
-FROM --platform="linux/arm64" ubuntu:24.04
+FROM ubuntu:24.04
 LABEL doblander.org:image-use=admin
 ENV USER=root
 ADD "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" "awscliv2.zip" 
