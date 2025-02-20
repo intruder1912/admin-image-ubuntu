@@ -1,6 +1,6 @@
 # admin-image-ubuntu
 
-an image based on ubuntu its for use as an admin machine to keep my MacBook as clean as possible. it includes normal network administration tools, as well as some advanced admin tools for Kubernetes in the cloud and on the local network.
+an image based on ubuntu its for use as an admin machine to keep my MacBook as clean as possible. it includes normal network administration tools, as well as some advanced admin tools for Kubernetes in the cloud and on the local network. the entrypoint for the image is set to the zsh, so it is not necessary to specify a shell command in the container run command line.
 
 ---
 **NOTE**:
@@ -28,9 +28,9 @@ podman run --platform="<os>/<arch>" --cap-add net_raw --cap-add net_admin <other
 run a bash inside the container with the necessary capabilities enabled, an assigned name, as well as with an interactive tty open. The container is also removed after exiting.
 
 ```bash
-podman run --platform="linux/arm64" --cap-add net_raw --cap-add net_admin \
+podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --cap-add net_admin \
     --rm --name netadmincontainer \
-    -ti localhost/adminubuntu:latest bash
+    -ti localhost/adminubuntu:latest
 ```
 
 Note:
@@ -56,15 +56,15 @@ echo $GHCR_TOKEN | podman login ghcr.io -u intruder1912 --password-stdin
 to pull the image from GitHub without building it locally before, use the following code (works only if the image has the "latest" tag; if not, one must use the specific sha digest to be found directly on GitHub):
 
 ```bash
-podman run --platform="linux/arm64" --cap-add net_raw --cap-add net_admin \
+podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --cap-add net_admin \
     --rm --name netadmincontainer \
-    -ti ghcr.io/intruder1912/admin-image-ubuntu:latest bash
+    -ti ghcr.io/intruder1912/admin-image-ubuntu:latest
 ```
 
 variant without a propper tag (latest), so one has to use a digest:
 
 ```bash
-podman run --platform="linux/arm64" --cap-add net_raw --cap-add net_admin \
+podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --cap-add net_admin \
     --rm --name netadmincontainer \
-    -ti ghcr.io/intruder1912/admin-image-ubuntu@sha256:71e9fffd81236d72c3b6046399115bc57e7df262a71cd2d627315f5979c59a68 bash
+    -ti ghcr.io/intruder1912/admin-image-ubuntu@sha256:71e9fffd81236d72c3b6046399115bc57e7df262a71cd2d627315f5979c59a68
 ```
