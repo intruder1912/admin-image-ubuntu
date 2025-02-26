@@ -42,7 +42,7 @@ podman build --platform="linux/arm64" -t localhost/adminubuntu:latest .
 
 ## using the GitHub container registry
 
-first, one needs to login to the GitHub registry by
+first, one needs to login to the GitHub registry.
 
 ***CAUTION!*** the login code is still work in progress and doesn't work yet and the whole section on using the GitHub registry is still not fully tested (image pull results in an error that could potentially be due to platform mismatch).
 
