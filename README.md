@@ -1,12 +1,9 @@
 # admin-image-ubuntu
 
-an image based on ubuntu its for use as an admin machine to keep my MacBook as clean as possible. it includes normal network administration tools, as well as some advanced admin tools for Kubernetes in the cloud and on the local network. the entrypoint for the image is set to the zsh, so it is not necessary to specify a shell command in the container run command line.
+an image based on ubuntu for use as an admin machine to keep my MacBook as clean as possible. it includes normal network administration tools, as well as some advanced admin tools for Kubernetes in the cloud and on the local network. the entrypoint for the image is set to the command ```zsh```, so it is not possible/necessary to specify a shell command in the container run command line. strings added to the container run command at the end will be interpreted as command arguments for the entrypoint defined in the containder file (Dockerfile). if another command should be specified as a runtime argument, the ```--entrypoint``` flag is needed as an override.
 
----
 **NOTE**:
 make sure to understand the difference between local images (build locally with the below build command) and the automatically created (on all main commits), an image potentially stored on DockerHub, and an image stored in the GitHub container registry. especially, make sure to select the right "platform" when the released container image is a multi-platform image.
-
----
 
 ## using the local image repository
 
@@ -23,18 +20,26 @@ podman run --platform="<os>/<arch>" --cap-add net_raw --cap-add net_admin <other
 
 #### example for actual practical use in network analysis
 
-***NOTE:*** this example is used for the new ARM64-based mac/macOS!
+***NOTE:***
+this example is used for the new ARM64-based mac/macOS!
 
-run a bash inside the container with the necessary capabilities enabled, an assigned name, as well as with an interactive tty open. The container is also removed after exiting.
+run a shell (currently configured is a ```zsh```) inside the container with the necessary capabilities enabled, an assigned name, as well as with an interactive tty open. The container is also removed after exiting.
 
 ```bash
-podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --cap-add net_admin \
+podman run --platform="linux/arm64" --hostname="adminhost" --network host --cap-add net_raw --cap-add net_admin --cap-add audit_write \
     --rm --name netadmincontainer \
     -ti localhost/adminubuntu:latest
 ```
 
-Note:
-If the container is not yet available locally (or not built at all yet), it has to be build. In that it is important to match the tags to not produce error messages when running the container!
+***IMPORTANT!***
+to use the container for network administration, it needs to have special "capabilities" added and run on the same network as the host (ARP). that is the reason for the ```--cap-add``` and ```--network``` options, respectively. for a full list of capabilities (i.e., in the Linux kernel!), refer to <https://man7.org/linux/man-pages/man7/capabilities.7.html>. for more information on container networking, please head to the Docker documentation pages. specifically relevant for the use above would be <https://docs.docker.com/engine/network/#drivers>. in general, for advanced administrational tasks it might even be necessary to start the container as ```root```.
+
+**CAVE:** when running a container as ```root```, socket communication to the podman daemon might not be possible without any further precautions. when running in a different user context than the podman desktop process, there seem to be restrictions in place (somehow expected).
+
+**NOTE:**
+if the container is not yet available locally (or not built at all yet), it has to be build. In that it is important to match the tags to not produce error messages when running the container!
+
+command to build the container locally:
 
 ```bash
 podman build --platform="linux/arm64" -t localhost/adminubuntu:latest .

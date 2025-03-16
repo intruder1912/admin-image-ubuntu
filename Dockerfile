@@ -61,8 +61,14 @@ RUN apt-get update && apt-get upgrade -y \
       && apt-get clean \ 
       && rm -rf /var/lib/apt/lists/* 
 
+      # FIXME: provide a defailt zsh profile
+      # FIXME: provide a default hosts file adequate for the network address/hostname
+      # FIXME: chekc if oh-my-zsh could be installed together with some cool theme
+
 # switch to the non-root user
 USER $USERNAME
 
-# start the zsh shell
+# start the zsh shell as entry point, so that a different command can only be passed with the --entrypoint flag
 ENTRYPOINT [ "/bin/zsh" ]
+# no CMD is needed, as the zsh shell will be started without parameters
+# CMD [ "-i" ] # this would start the zsh shell in interactive mode
