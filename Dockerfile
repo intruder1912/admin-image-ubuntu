@@ -1,5 +1,5 @@
 # kubectl image is used to install kubectl (put into the build cache)
-FROM bitnami/kubectl:1.33.1 AS kubectl
+FROM bitnami/kubectl:1.33.2 AS kubectl
 
 # actual base image for the container
 FROM ubuntu:24.04
