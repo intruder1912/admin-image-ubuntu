@@ -1,5 +1,5 @@
 # kubectl image is used to install kubectl (put into the build cache)
-FROM bitnami/kubectl:1.33.4 AS kubectl
+FROM registry.k8s.io/kubectl:v1.34.1 AS kubectl
 
 # actual base image for the container
 FROM ubuntu:24.04
@@ -19,7 +19,7 @@ ADD "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" "awscliv2.zip"
 ADD "https://apt.releases.hashicorp.com/gpg" "hashicorp"
 
 # install kubectl by copying the binary from the kubectl image leveraging multi-stage builds (kubectl image in the cache)
-COPY --from=kubectl /opt/bitnami/kubectl/bin/kubectl /usr/local/bin/
+COPY --from=kubectl /bin/kubectl /usr/local/bin/
 RUN apt-get update && apt-get upgrade -y \
       # install basic tools
       && apt-get install -y \
