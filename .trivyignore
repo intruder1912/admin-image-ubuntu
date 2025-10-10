@@ -1,0 +1,28 @@
+# Trivy ignore file - best practices
+#
+# Keep this file minimal. Only ignore vulnerabilities that are:
+#  - identified as false positives, or
+#  - accepted risk with a documented mitigation plan, or
+#  - in third-party/proprietary software you cannot patch.
+#
+# For each ignored item include: author, reason and an expiry/review date so ignores are re-evaluated.
+# Format is simple: a vulnerability ID per line (e.g. CVE-YYYY-NNNN). Inline comments are allowed.
+
+# Example (replace placeholders with real values):
+# CVE-YYYY-NNNNN  # author: alice@example.com  reason: false positive in build artifact  expires: 2026-01-01
+
+# --- Your ignores below (only add after proper review) ---
+# Add a single CVE per line, and annotate with reason and expiry as a comment.
+# CVE-PLACEHOLDER-1  # author: you@example.com  reason: <explain why>  expires: YYYY-MM-DD
+# CVE-PLACEHOLDER-2  # author: you@example.com  reason: <explain why>  expires: YYYY-MM-DD
+
+# --- Image / package scoped ignores (use very sparingly) ---
+# If you need to scope an ignore to a specific image or package, document it here.
+# Note: Trivy's legacy .trivyignore accepts vulnerability IDs. For finer scoping, prefer
+# per-repo documentation linking the CVE to the affected package/image and keep the global
+# .trivyignore small.
+
+# --- Maintenance notes ---
+# - Review this file regularly (e.g. at each release or quarterly).
+# - Remove entries once a patch is available or the issue is no longer relevant.
+# - Prefer fixing/patching over ignoring vulnerabilities.

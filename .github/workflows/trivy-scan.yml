@@ -1,0 +1,52 @@
+name: Trivy Container Scan
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  trivy-scan:
+    name: Trivy Scan
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository }}:${{ github.sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Check if Dockerfile exists
+        run: |
+          if [ ! -f Dockerfile ]; then
+            echo "ERROR: Dockerfile not found in repository root."
+            exit 1
+          fi
+      
+      - name: Build an image from Dockerfile
+        run: docker build -t ${{ env.IMAGE_NAME }} .
+      
+      - name: Run Trivy vulnerability scan - Full report (but no CI fail)
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # corresponds to v0.33.1
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}
+          # produce a machine-readable report including HIGH and CRITICAL, do NOT set exit-code here
+          format: 'json'
+          vuln-type: 'os,library'
+          output: 'trivy-report.json'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy JSON report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          if-no-files-found: error
+
+      - name: Run Trivy vulnerability scan - Fail on CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # corresponds to v0.33.1
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}
+          format: 'table'
+          ignore-unfixed: true
+          exit-code: '1'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
