@@ -1,0 +1,25 @@
+name: Trivy Container Scan
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  trivy-scan:
+    name: Trivy Scan
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build an image from Dockerfile
+        run: docker build -t docker.io/intruder1912/admin-image-ubuntu:${{ github.sha }} .
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: 'docker.io/intruder1912/admin-image-ubuntu:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
