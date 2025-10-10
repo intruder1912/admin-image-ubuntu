@@ -10,7 +10,7 @@ jobs:
     name: Trivy Scan
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: ghcr.io/${{ github.repository }}/admin-image-ubuntu:${{ github.sha }}
+      IMAGE_NAME: ghcr.io/${{ github.repository }}:${{ github.sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
       - name: Build an image from Dockerfile
         run: docker build -t ${{ env.IMAGE_NAME }} .
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # corresponds to v0.33.1
         with:
           image-ref: ${{ env.IMAGE_NAME }}
           format: 'table'
