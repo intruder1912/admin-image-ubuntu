@@ -3,7 +3,7 @@
 # Keep this file minimal. Only ignore vulnerabilities that are:
 #  - identified as false positives, or
 #  - accepted risk with a documented mitigation plan, or
-#  - in third‑party/proprietary software you cannot patch.
+#  - in third-party/proprietary software you cannot patch.
 #
 # For each ignored item include: author, reason and an expiry/review date so ignores are re-evaluated.
 # Format is simple: a vulnerability ID per line (e.g. CVE-YYYY-NNNN). Inline comments are allowed.
