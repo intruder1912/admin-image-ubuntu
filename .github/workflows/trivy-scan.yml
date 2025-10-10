@@ -8,12 +8,18 @@ on:
 jobs:
   trivy-scan:
     name: Trivy Scan
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     env:
       IMAGE_NAME: ghcr.io/${{ github.repository }}/admin-image-ubuntu:${{ github.sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Check if Dockerfile exists
+        run: |
+          if [ ! -f Dockerfile ]; then
+            echo "ERROR: Dockerfile not found in repository root."
+            exit 1
+          fi
       - name: Build an image from Dockerfile
         run: docker build -t ${{ env.IMAGE_NAME }} .
       - name: Run Trivy vulnerability scanner
