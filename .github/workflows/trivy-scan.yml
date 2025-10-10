@@ -9,15 +9,17 @@ jobs:
   trivy-scan:
     name: Trivy Scan
     runs-on: ubuntu-24.04
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository }}/admin-image-ubuntu:${{ github.sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Build an image from Dockerfile
-        run: docker build -t ghcr.io/intruder1912/admin-image-ubuntu:${{ github.sha }} .
+        run: docker build -t ${{ env.IMAGE_NAME }} .
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
         with:
-          image-ref: 'ghcr.io/intruder1912/admin-image-ubuntu:${{ github.sha }}'
+          image-ref: ${{ env.IMAGE_NAME }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
