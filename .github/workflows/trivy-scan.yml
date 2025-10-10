@@ -27,7 +27,7 @@ jobs:
         with:
           image-ref: ${{ env.IMAGE_NAME }}
           format: 'table'
+          ignore-unfixed: 'true'
           exit-code: '1'
-          ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
