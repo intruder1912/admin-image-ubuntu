@@ -1,0 +1,18 @@
+name: Cleanup Old Package Versions
+
+on:
+  schedule:
+    - cron: '19 3 * * 0'  # Every Sunday at 03:19 UTC
+  workflow_dispatch:      # Optional manual trigger
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ github.event.repository.name }}
+          package-type: 'container'  # or 'npm', 'maven', etc.
+          min-versions-to-keep: 12
+          token: ${{ secrets.GITHUB_TOKEN }}
