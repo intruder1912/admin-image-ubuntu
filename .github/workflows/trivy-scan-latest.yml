@@ -1,5 +1,10 @@
 name: Monthly Trivy Scan (Latest Image)
 
+permissions:
+  issues: write
+  contents: read
+  packages: read
+
 on:
   workflow_dispatch: {}
   schedule:
@@ -8,14 +13,61 @@ on:
 jobs:
   trivy-scan-latest:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository }}:latest # only scan the "latest" tag of the image
     steps:
-      - name: Set up Trivy
+      - name: Cache Trivy database
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ runner.os }}-${{ hashFiles('**/trivy-scan-latest.yml') }}
+          restore-keys: |
+            trivy-db-${{ runner.os }}-
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Run Trivy vulnerability scan - Full report (but no CI fail)
         uses: aquasecurity/trivy-action@0.34.0
         with:
-          scan-type: 'image'
-          image-ref: 'ghcr.io/intruder1912/admin-image-ubuntu:latest'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
+          image-ref: ${{ env.IMAGE_NAME }}
+          # produce a machine-readable report including HIGH and CRITICAL, do NOT set exit-code here
+          format: 'json'
           vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          output: 'trivy-report.json'
+          severity: 'CRITICAL,HIGH'
+      - name: Upload Trivy JSON report
+        uses: actions/upload-artifact@v6
+        with:
+          name: trivy-report
+          path: trivy-report.json # can be found in the "Artifacts" section of the workflow run summary
+          if-no-files-found: error
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+      - name: Run Trivy scan and save report
+        id: trivy
+        run: |
+          trivy image --format table --exit-code 0 --ignore-unfixed --vuln-type os,library --severity CRITICAL,HIGH,MEDIUM ghcr.io/intruder1912/admin-image-ubuntu:latest > trivy-scan-report.txt
+          trivy image --format json --exit-code 0 --ignore-unfixed --vuln-type os,library --severity CRITICAL,HIGH,MEDIUM ghcr.io/intruder1912/admin-image-ubuntu:latest > trivy-scan-report.json
+
+      - name: Determine if vulnerabilities were found
+        id: vuln-check
+        run: |
+          count=$(jq '[.[].Results[].Vulnerabilities[]] | length' trivy-scan-report.json 2>/dev/null || echo 0)
+          if [ "$count" -gt 0 ]; then
+            echo "has_vulnerabilities=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_vulnerabilities=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub issue if vulnerabilities found
+        if: steps.vuln-check.outputs.has_vulnerabilities == 'true'
+        uses: peter-evans/create-issue-from-file@v4
+        with:
+          title: "Trivy Scan Report - Vulnerabilities Detected"
+          content-filepath: trivy-scan-report.txt
+          labels: security, automated-report
