@@ -3,6 +3,7 @@ name: Monthly Trivy Scan (Latest Image)
 permissions:
   issues: write
   contents: read
+  packages: read
 
 on:
   workflow_dispatch: {}
@@ -13,6 +14,13 @@ jobs:
   trivy-scan-latest:
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Trivy database
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ runner.os }}-${{ hashFiles('**/trivy-scan-latest.yml') }}
+          restore-keys: |
+            trivy-db-${{ runner.os }}-
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Install Trivy
