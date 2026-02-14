@@ -13,6 +13,8 @@ on:
 jobs:
   trivy-scan-latest:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/${{ github.repository }}:latest
     steps:
       - name: Cache Trivy database
         uses: actions/cache@v4
@@ -23,6 +25,21 @@ jobs:
             trivy-db-${{ runner.os }}-
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Run Trivy vulnerability scan - Full report (but no CI fail)
+        uses: aquasecurity/trivy-action@0.34.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}
+          # produce a machine-readable report including HIGH and CRITICAL, do NOT set exit-code here
+          format: 'json'
+          vuln-type: 'os,library'
+          output: 'trivy-report.json'
+          severity: 'CRITICAL,HIGH'
+      - name: Upload Trivy JSON report
+        uses: actions/upload-artifact@v6
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          if-no-files-found: error
       - name: Install Trivy
         run: |
           sudo apt-get update
