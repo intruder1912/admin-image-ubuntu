@@ -14,7 +14,7 @@ jobs:
   trivy-scan-latest:
     runs-on: ubuntu-latest
     env:
-      IMAGE_NAME: ghcr.io/${{ github.repository }}:latest
+      IMAGE_NAME: ghcr.io/${{ github.repository }}:latest # only scan the "latest" tag of the image
     steps:
       - name: Cache Trivy database
         uses: actions/cache@v4
@@ -38,7 +38,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: trivy-report
-          path: trivy-report.json
+          path: trivy-report.json # can be found in the "Artifacts" section of the workflow run summary
           if-no-files-found: error
       - name: Install Trivy
         run: |
