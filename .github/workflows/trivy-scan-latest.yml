@@ -9,13 +9,16 @@ jobs:
   trivy-scan-latest:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Trivy
-        uses: aquasecurity/trivy-action@0.34.0
+      - name: Run Trivy scan and save report
+        id: trivy
+        run: |
+          trivy image --format table --exit-code 0 --ignore-unfixed --vuln-type os,library --severity CRITICAL,HIGH,MEDIUM ghcr.io/intruder1912/admin-image-ubuntu:latest > trivy-scan-report.txt
+          trivy image --format json --exit-code 0 --ignore-unfixed --vuln-type os,library --severity CRITICAL,HIGH,MEDIUM ghcr.io/intruder1912/admin-image-ubuntu:latest > trivy-scan-report.json
+
+      - name: Create GitHub issue if vulnerabilities found
+        if: always()
+        uses: peter-evans/create-issue-from-file@v4
         with:
-          scan-type: 'image'
-          image-ref: 'ghcr.io/intruder1912/admin-image-ubuntu:latest'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          title: "Trivy Scan Report - Vulnerabilities Detected"
+          content-filepath: trivy-scan-report.txt
+          labels: security, automated-report
