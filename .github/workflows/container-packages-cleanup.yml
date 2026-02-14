@@ -1,4 +1,4 @@
-name: Cleanup Old Package Versions
+name: Cleanup Old Container Package Versions
 
 on:
   schedule:
@@ -8,8 +8,10 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
-      - name: Delete old versions
+      - name: Delete old container package versions
         uses: actions/delete-package-versions@v5.0.0
         with:
           package-name: ${{ github.event.repository.name }}
