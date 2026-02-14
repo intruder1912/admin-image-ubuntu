@@ -47,10 +47,11 @@ podman build --platform="linux/arm64" -t localhost/adminubuntu:latest .
 
 ## Automated GitHub Actions updates
 
-This repository uses [Dependabot](https://docs.github.com/en/code-security/dependabot) to keep GitHub Actions workflows up to date automatically.
+This repository uses [Dependabot](https://docs.github.com/en/code-security/dependabot) to keep Docker files and GitHub Actions workflows up to date automatically.
 
 **How it works:**
 
+- Dependabot checks for new versions of Docker base images used in Dockerfiles.
 - Dependabot checks for new versions of GitHub Actions used in workflow files (in `.github/workflows/`).
 - If updates are available, Dependabot will open a pull request to update the action versions.
 - Configuration is in `.github/dependabot.yml`:
@@ -64,7 +65,7 @@ updates:
 ```
 
 **Example PR:**
-> _Dependabot will create a pull request like:_
+> *Dependabot will create a pull request like:*
 > "Bump actions/checkout from v3 to v4 in .github/workflows/ci.yml"
 
 No manual action is required unless you want to change the update schedule or add more ecosystems.

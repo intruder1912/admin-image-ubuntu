@@ -11,7 +11,7 @@
 
 ## Example: Dependabot Configuration for GitHub Actions
 
-```
+```yaml
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
