@@ -15,8 +15,18 @@ jobs:
           trivy image --format table --exit-code 0 --ignore-unfixed --vuln-type os,library --severity CRITICAL,HIGH,MEDIUM ghcr.io/intruder1912/admin-image-ubuntu:latest > trivy-scan-report.txt
           trivy image --format json --exit-code 0 --ignore-unfixed --vuln-type os,library --severity CRITICAL,HIGH,MEDIUM ghcr.io/intruder1912/admin-image-ubuntu:latest > trivy-scan-report.json
 
+      - name: Determine if vulnerabilities were found
+        id: vuln-check
+        run: |
+          count=$(jq '[.[].Results[].Vulnerabilities[]] | length' trivy-scan-report.json 2>/dev/null || echo 0)
+          if [ "$count" -gt 0 ]; then
+            echo "has_vulnerabilities=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_vulnerabilities=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create GitHub issue if vulnerabilities found
-        if: always()
+        if: steps.vuln-check.outputs.has_vulnerabilities == 'true'
         uses: peter-evans/create-issue-from-file@v4
         with:
           title: "Trivy Scan Report - Vulnerabilities Detected"
