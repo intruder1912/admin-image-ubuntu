@@ -1,14 +1,40 @@
 # Contributing
 
-## Keeping GitHub Actions Up to Date
+## Engineering Workflow Steps
 
-This repository uses Dependabot to automatically update GitHub Actions workflow dependencies. To contribute to this process or adjust the configuration:
+These steps apply to all contributions:
 
-1. Edit `.github/dependabot.yml` to add or modify the `github-actions` package ecosystem.
-2. Use a dedicated branch for changes (e.g., `chore/dependabot-github-actions`).
-3. Use a conventional commit message (e.g., `chore(dependabot): add github-actions ecosystem`).
-4. Update documentation as needed (README, AGENTS.md).
-5. Push your branch and open a pull request to `main`.
+1. Use a dedicated branch for each change, named `<category>/<short-description>` (e.g., `chore/dependabot-github-actions`).
+2. Use conventional commit messages for clarity and traceability.
+3. Update documentation as needed (README, AGENTS.md, etc.).
+4. Push your branch to origin.
+5. **Create a pull request to `main`.**
+  
+  - You can use the GitHub CLI (`gh`) for this step:
+  
+    ```sh
+    gh pr create --fill --base main --head <your-branch-name>
+    ```
+
+  - This will open a PR from your feature branch to `main` with the commit message and description auto-filled
+
+6. After a pull request is merged:
+    - Switch back to the `main` branch: `git checkout main`
+    - Pull the latest changes: `git pull origin main`
+    - Delete the local feature branch: `git branch -d <branch-name>`
+    - Delete the remote feature branch: `git push origin --delete <branch-name>`
+
+If you have questions or something is unclear, please ask before proceeding.
+
+If you have questions or something is unclear, please ask before proceeding.
+
+---
+
+## Dependabot Configuration and Updates
+
+This repository uses Dependabot to automatically update dependencies, including GitHub Actions workflows and Docker base images.
+
+To adjust Dependabot configuration, edit `.github/dependabot.yml` to add or modify the relevant package ecosystem (e.g., `github-actions`, `docker`).
 
 **Example dependabot.yml entry:**
 
@@ -19,5 +45,3 @@ updates:
     schedule:
       interval: "weekly"
 ```
-
-If you have questions or something is unclear, please ask before proceeding.
