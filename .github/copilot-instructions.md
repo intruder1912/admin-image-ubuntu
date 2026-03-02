@@ -1,4 +1,9 @@
-# AGENTS.md
+# GitHub Copilot Instructions
+
+The canonical engineering workflow for this repository is defined in `AGENTS.md`.
+Follow it for every task. The full content is reproduced below.
+
+---
 
 ## Engineering Workflow Steps
 
