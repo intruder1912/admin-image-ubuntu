@@ -12,8 +12,8 @@ ARG USERNAME=intruder
 ARG USER_UID=1001
 ARG USER_GID=$USER_UID
 
-# download the aws-cli
-ADD "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" "awscliv2.zip" 
+# expose the build-time target architecture so we can select the correct AWS CLI binary
+ARG TARGETARCH
 
 # download the hashicorp gpg key
 ADD "https://apt.releases.hashicorp.com/gpg" "hashicorp"
@@ -23,7 +23,7 @@ COPY --from=kubectl /bin/kubectl /usr/local/bin/
 RUN apt-get update && apt-get upgrade -y \
       # install basic tools
       && apt-get install -y \
-         Node.js \
+         nodejs \
          curl \
          gnupg \
          iproute2 \
@@ -49,6 +49,9 @@ RUN apt-get update && apt-get upgrade -y \
       && apt-get install -y \
         terraform \
       # install aws-cdk and aws-cli
+      # map Docker's TARGETARCH (amd64/arm64) to the AWS CLI archive naming (x86_64/aarch64)
+      && AWS_ARCH=$([ "$TARGETARCH" = "amd64" ] && echo "x86_64" || echo "aarch64") \
+      && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip" -o awscliv2.zip \
       && npm i -g aws-cdk \
       && unzip awscliv2.zip \
       && ./aws/install \
