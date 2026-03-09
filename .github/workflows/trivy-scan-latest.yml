@@ -26,7 +26,7 @@ jobs:
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Run Trivy vulnerability scan - Full report (but no CI fail)
-        uses: aquasecurity/trivy-action@0.34.1
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}
           # produce a machine-readable report including HIGH and CRITICAL, do NOT set exit-code here
