@@ -23,22 +23,46 @@ COPY --from=kubectl /bin/kubectl /usr/local/bin/
 RUN apt-get update && apt-get upgrade -y \
       # install basic tools
       && apt-get install -y \
-         nodejs \
+         arp-scan \
+         atop \
+         auditd \
+         build-essential \
+         chkrootkit \
+         clamav \
          curl \
+         dnsutils \
          gnupg \
+         htop \
          iproute2 \
+         iptables \
          iputils-ping \
+         jq \
+         lsof \
+         ltrace \
+         lynis \
+         mtr \
          nano \
          net-tools \
+         netcat-openbsd \
          nmap \
+         nodejs \
          npm \
+         p7zip-full \
          pip \
          python-is-python3 \
+         screen \
+         socat \
          software-properties-common \
+         strace \
          sudo \
+         tcpdump \
+         tmux \
+         tshark \
          unzip \
          vim \
+         whois \
          wget \
+         yq \
          zsh \
       # install terraform
       && gpg --dearmor hashicorp \
