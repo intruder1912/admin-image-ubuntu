@@ -1,174 +1,96 @@
 # GitHub Copilot Instructions
 
-The canonical engineering workflow for this repository is defined in `AGENTS.md`.
-Follow it for every task. The full content is reproduced below.
+The authoritative engineering workflow is in `AGENTS.md`. The checklist below mirrors that workflow and provides Copilot-specific context for code completion, suggestions, and PR reviews.
+
+## Project Context
+
+This is a **multi-stage Dockerfile-based Ubuntu image** for admin/DevOps tooling:
+- **Target:** ARM64 macOS (`--platform="linux/arm64"`)
+- **Entrypoint:** zsh
+- **User:** non-root (`intruder`, UID 1001)
+- **Purpose:** portable admin workstation with Kubernetes, Terraform, AWS CDK, AWS CLI, and network admin tools
+
+When suggesting code:
+- Favor multi-stage builds for size optimization
+- Maintain non-root execution
+- Use conventional commit messages throughout
 
 ---
 
-## Engineering Workflow Steps
+## Engineering Workflow Checklist
 
-Follow these steps in order for every engineering task:
-
-### 1. Sync with origin/main
-
-Always start from an up-to-date `main` branch:
-
+### 1. Sync with main
 ```sh
-git checkout main
-git pull origin main
+git checkout main && git pull origin main
 ```
 
-### 2. Create a feature branch
-
-Branch off `main` immediately after syncing. Use the naming scheme `<category>/<short-description>`:
-
-| Category | When to use |
-|----------|-------------|
-| `feat`   | new feature or capability |
-| `fix`    | bug fix |
-| `chore`  | maintenance, dependency updates, tooling |
-| `docs`   | documentation-only changes |
-| `refactor` | code restructuring without behaviour change |
-| `ci`     | CI/CD pipeline changes |
-
-```sh
-git checkout -b <category>/<short-description>
-# e.g.: git checkout -b feat/add-helm-tool
-#        git checkout -b fix/nodejs-package-name
-#        git checkout -b chore/bump-kubectl-version
-```
+### 2. Create feature branch
+Use `<category>/<description>` naming: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `ci/`
+- Example: `feat/add-helm-tool`, `fix/dockerfile-syntax`, `chore/bump-kubectl`
 
 ### 3. Understand the task
+- Read relevant files and context
+- Ask for clarification if anything is unclear
 
-Before writing any code:
+### 4. Implement changes
+- Modify code, configs, and documentation
+- Keep changes concise and non-redundant
+- Update README, CONTRIBUTING, or AGENTS.md if the change affects usage or workflow
 
-- Read the relevant files and context.
-- Clarify any ambiguity with the user before proceeding.
-- If anything is unclear, always ask for clarification.
-
-### 4. Implement the task
-
-- Make all necessary code, config, and documentation changes.
-- Update documentation (README, CONTRIBUTING, AGENTS.md) when the change affects usage, workflow, or project conventions. Keep content concise, non-redundant, and audience-appropriate.
-
-### 5. Verify locally — required before committing, pushing, or opening a PR
-
-**Do not proceed to the next step unless verification passes.**
-
-#### Build the image
-
-On macOS, use `podman` instead of `docker`:
+### 5. Verify locally (required before commit)
+**On macOS, use `podman` not `docker`:**
 
 ```sh
+# Build
 podman build --platform="linux/arm64" -t localhost/adminubuntu:latest .
-```
 
-A successful build ends with output similar to:
-
-```
-Successfully tagged localhost/adminubuntu:latest
-<sha256 digest>
-```
-
-#### Confirm the image exists
-
-```sh
+# Confirm
 podman image ls localhost/adminubuntu:latest
-```
 
-#### Smoke-test the entrypoint
-
-```sh
+# Smoke test (all three must succeed)
 podman run --rm localhost/adminubuntu:latest -c "kubectl version --client && terraform version && aws --version"
 ```
 
-All three commands must exit successfully. If any fail, fix the issue and re-run the full build before continuing.
+Do not proceed if any check fails. Re-run the full build.
 
-#### If verification fails
-
-- Fix the problem in the implementation.
-- Re-run the build and smoke-test from the top of this step.
-- Do **not** commit, push, or open a PR until all checks pass.
-
-### 6. Commit with a conventional commit message
-
-Stage all relevant changes and commit using the [Conventional Commits](https://www.conventionalcommits.org/) format:
-
-```
-<type>(<optional scope>): <short imperative summary>
-
-<optional body: explain the why, not the what>
-
-<optional footer: breaking changes, issue references>
-```
-
-Examples:
-
+### 6. Commit with conventional format
 ```sh
 git add .
-git commit -m "fix(dockerfile): correct nodejs package name casing"
-git commit -m "feat(dockerfile): add helm binary via multi-stage build"
-git commit -m "chore(deps): bump kubectl to v1.36.0"
-git commit -m "ci(trivy): fail on HIGH as well as CRITICAL vulnerabilities"
+git commit -m "<type>(<scope>): <summary>
+
+[optional body explaining why, not what]
+
+[optional footer: issue refs, breaking changes]"
 ```
 
-### 7. Push the branch to origin
+Examples: `fix(dockerfile):`, `feat(dockerfile):`, `chore(deps):`, `ci(trivy):`
 
+### 7. Push branch
 ```sh
-git push -u origin <your-branch-name>
+git push -u origin <branch-name>
 ```
 
-### 8. Create a pull request with the GitHub CLI
-
-Use `gh pr create` with an explicit, descriptive title and a structured body. Do **not** rely on `--fill` alone — write a useful title and body:
-
+### 8. Create PR
 ```sh
-gh pr create \
-  --base main \
-  --head <your-branch-name> \
-  --title "<type>(<scope>): <short summary>" \
-  --body "$(cat <<'EOF'
-## Summary
-
-- <bullet: what changed and why>
-- <bullet: any noteworthy implementation detail>
-
-## Testing
-
-- <how the change was verified locally>
-
-## Related
-
-- Closes #<issue-number> (if applicable)
-EOF
-)"
+gh pr create --base main --head <branch-name> \
+  --title "<type>(<scope>): <summary>" \
+  --body "## Summary\n...\n## Testing\n...\n## Related\n..."
 ```
 
-### 9. After a pull request is merged
+Do not rely on `--fill` alone — write an explicit title and body.
 
-Clean up once the PR is merged into `main`:
-
+### 9. Post-merge cleanup
 ```sh
-git checkout main
-git pull origin main
+git checkout main && git pull origin main
 git branch -d <branch-name>
 git push origin --delete <branch-name>
 ```
 
-If anything is unclear, always ask for clarification before proceeding.
-
 ---
 
-## Learnings: Dependabot Configuration
+## Dependabot & Dependency Updates
 
-When updating dependencies, always include the relevant package ecosystem (e.g., `github-actions`) in `.github/dependabot.yml` to ensure workflows and dependencies are kept up to date.
-
-**Example dependabot.yml entry:**
-
-```yaml
-updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-```
+See `CONTRIBUTING.md` for dependency management details. When updating dependencies:
+- Edit `.github/dependabot.yml` to include the correct package ecosystem (`docker`, `github-actions`, etc.)
+- Verify the build passes with new versions
+- Commit using `chore(deps): ...` format

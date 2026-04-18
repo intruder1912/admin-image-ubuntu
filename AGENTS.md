@@ -151,19 +151,3 @@ git push origin --delete <branch-name>
 ```
 
 If anything is unclear, always ask for clarification before proceeding.
-
----
-
-## Learnings: Dependabot Configuration
-
-When updating dependencies, always include the relevant package ecosystem (e.g., `github-actions`) in `.github/dependabot.yml` to ensure workflows and dependencies are kept up to date.
-
-**Example dependabot.yml entry:**
-
-```yaml
-updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-```
