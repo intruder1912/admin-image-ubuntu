@@ -25,7 +25,7 @@ jobs:
         run: docker build -t ${{ env.IMAGE_NAME }} .
       
       - name: Run Trivy vulnerability scan - Full report (but no CI fail)
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # corresponds to v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # corresponds to v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}
           # produce a machine-readable report including HIGH and CRITICAL, do NOT set exit-code here
@@ -42,7 +42,7 @@ jobs:
           if-no-files-found: error
 
       - name: Run Trivy vulnerability scan - Fail on CRITICAL vulnerabilities
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # corresponds to v0.35.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # corresponds to v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}
           format: 'table'
