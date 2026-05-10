@@ -2,7 +2,7 @@
 FROM registry.k8s.io/kubectl:v1.36.0 AS kubectl
 
 # actual base image for the container
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 LABEL doblander.org:image-use=admin
 
 #ENV USER=root
