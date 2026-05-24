@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# icmp-sanity-check — detect gvproxy/podman-on-macOS ICMP false positives.
+# Pings RFC 5737 TEST-NET-1 addresses that MUST NOT answer on a healthy network.
+# Any success indicates ICMP results from this container cannot be trusted.
+set -u
+
+TARGETS=(192.0.2.1 192.0.2.123 192.0.2.254)
+SUCCESSES=0
+
+for ip in "${TARGETS[@]}"; do
+  out=$(ping -c 1 -W 1 "$ip" 2>&1)
+  rc=$?
+  case "$rc" in
+    0)
+      SUCCESSES=$((SUCCESSES + 1))
+      echo "WARN: ping to TEST-NET address $ip succeeded (must not happen)."
+      ;;
+    1)
+      ;;
+    2)
+      echo "ERROR: ping could not execute against $ip (missing CAP_NET_RAW?): $out" >&2
+      echo "       Re-run the container with: --cap-add net_raw" >&2
+      exit 2
+      ;;
+    *)
+      echo "ERROR: unexpected ping exit code $rc for $ip: $out" >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [ "$SUCCESSES" -gt 0 ]; then
+  cat >&2 <<'EOF'
+ICMP appears UNRELIABLE in this container.
+You are likely on macOS with podman + gvproxy: the userspace gateway
+returns echo replies for unreachable hosts, so `ping` cannot be trusted
+as a reachability test here.
+Use the alternatives documented in README.md ("macOS networking caveats")
+— e.g. `nc -vz`, `nmap -Pn`, `mtr -T`.
+EOF
+  exit 1
+fi
+
+echo "OK: ICMP behaves as expected (TEST-NET addresses did not reply)."
+exit 0

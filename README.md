@@ -45,6 +45,55 @@ command to build the container locally:
 podman build --platform="linux/arm64" -t localhost/adminubuntu:latest .
 ```
 
+## macOS networking caveats
+
+on macOS, ```podman``` runs containers inside a Linux VM (```podman machine```) whose network is fronted by ```gvproxy```, a userspace TCP/IP gateway. two consequences matter for the diagnostic tools shipped in this image:
+
+1. **```ping``` is unreliable.** ```gvproxy``` translates ICMP via macOS's ```SOCK_DGRAM``` ICMP sockets and can return apparent echo replies for hosts that do not exist or are not routable. a successful ```ping``` from inside the container is **NOT** proof of reachability on macOS. ```--cap-add net_raw``` is correctly applied but has no effect on this userspace translation layer.
+2. **```--network host``` shares the VM's namespace, not your Mac's LAN.** layer-2 tools (```arp-scan```, raw ```tcpdump``` on a physical NIC, ARP-based neighbour discovery) cannot see your real LAN from inside the container.
+
+on native Linux hosts both limitations disappear — ```podman``` uses the host's network stack directly.
+
+### reliable alternatives (already installed in this image)
+
+| goal | use instead of ```ping <host>``` |
+|------|----------------------------------|
+| host alive / TCP port reachable | ```nc -vz -w 3 <host> <port>``` |
+| TCP "ping" without ICMP | ```nmap -sn -PS22,80,443 <host>``` |
+| force a probe regardless of host-discovery | ```nmap -Pn -p 22,80,443 <host>``` |
+| DNS resolution | ```dig +short <host>``` |
+| latency / TCP traceroute | ```mtr -n -c 5 -T -P 443 <host>``` |
+| generic traceroute | ```tracepath <host>``` or ```mtr -rwzbc 1 <host>``` |
+| confirm a service speaks | ```nc -vz <host> <port>``` then ```socat - TCP:<host>:<port>``` |
+
+```mtr``` in TCP mode (```-T```) and ```nmap -PS``` bypass ICMP entirely, so they are not fooled by ```gvproxy```'s ICMP behaviour.
+
+### ICMP sanity check
+
+the image ships a small probe at ```/usr/local/bin/icmp-sanity-check```. it pings several RFC 5737 TEST-NET-1 addresses (which must never answer); any "success" indicates you are in the ```gvproxy``` false-positive scenario.
+
+run it inside the container:
+
+```bash
+icmp-sanity-check
+```
+
+exit codes:
+
+- ```0``` — pings to TEST-NET addresses failed as expected. ICMP appears trustworthy (typical on Linux hosts).
+- ```1``` — at least one TEST-NET address answered. you are almost certainly on macOS/podman + ```gvproxy```; do **NOT** trust ```ping``` results. use the alternatives in the table above.
+- ```2``` — ```ping``` itself failed to run (missing ```CAP_NET_RAW```). re-run the container with ```--cap-add net_raw```.
+
+### running ICMP from the VM directly (escape hatch)
+
+if you need real ICMP from macOS, bypass the container and run from the ```podman``` VM itself:
+
+```bash
+podman machine ssh -- ping -c 3 <host>
+```
+
+this still goes through the VM's stack but avoids the container-side ```gvproxy``` ICMP translation quirks for some test scenarios.
+
 ## using the GitHub container registry
 
 first, one needs to login to the GitHub registry.
