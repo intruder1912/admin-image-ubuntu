@@ -2,7 +2,20 @@
 # icmp-sanity-check — detect gvproxy/podman-on-macOS ICMP false positives.
 # Pings RFC 5737 TEST-NET-1 addresses that MUST NOT answer on a healthy network.
 # Any success indicates ICMP results from this container cannot be trusted.
+#
+# Exit codes:
+#   0 — ICMP behaves as expected
+#   1 — at least one TEST-NET address answered (gvproxy/macOS ICMP unreliable)
+#   2 — CAP_NET_RAW capability is missing; re-run with --cap-add net_raw
+#   3 — unexpected ping runtime error unrelated to capabilities
 set -u
+
+# Capability preflight: ping localhost to detect missing CAP_NET_RAW.
+preflight_out=$(ping -c 1 -W 1 127.0.0.1 2>&1)
+if echo "$preflight_out" | grep -q "Operation not permitted"; then
+  echo "ERROR: CAP_NET_RAW is missing; re-run the container with --cap-add net_raw" >&2
+  exit 2
+fi
 
 TARGETS=(192.0.2.1 192.0.2.123 192.0.2.254)
 SUCCESSES=0
@@ -17,14 +30,9 @@ for ip in "${TARGETS[@]}"; do
       ;;
     1)
       ;;
-    2)
-      echo "ERROR: ping could not execute against $ip (missing CAP_NET_RAW?): $out" >&2
-      echo "       Re-run the container with: --cap-add net_raw" >&2
-      exit 2
-      ;;
     *)
       echo "ERROR: unexpected ping exit code $rc for $ip: $out" >&2
-      exit 2
+      exit 3
       ;;
   esac
 done

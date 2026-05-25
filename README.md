@@ -82,7 +82,8 @@ exit codes:
 
 - ```0``` — pings to TEST-NET addresses failed as expected. ICMP appears trustworthy (typical on Linux hosts).
 - ```1``` — at least one TEST-NET address answered. you are almost certainly on macOS/podman + ```gvproxy```; do **NOT** trust ```ping``` results. use the alternatives in the table above.
-- ```2``` — ```ping``` itself failed to run (missing ```CAP_NET_RAW```). re-run the container with ```--cap-add net_raw```.
+- ```2``` — ```CAP_NET_RAW``` is missing. re-run the container with ```--cap-add net_raw```.
+- ```3``` — unexpected ```ping``` runtime error unrelated to capabilities. check the error output for details.
 
 ### running ICMP from the VM directly (escape hatch)
 

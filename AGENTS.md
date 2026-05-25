@@ -92,7 +92,8 @@ Expected outcomes:
 
 - **macOS host:** exit code `1`, warning printed → confirms the documented `gvproxy` behaviour. This is **not** a regression. See the "macOS networking caveats" section in `README.md` for reliable alternatives.
 - **Linux host:** exit code `0` → ICMP behaves correctly.
-- **Exit code `2` anywhere:** real failure. Check that `--cap-add net_raw` is present.
+- **Exit code `2` anywhere:** `CAP_NET_RAW` is missing. Ensure `--cap-add net_raw` is present.
+- **Exit code `3` anywhere:** unexpected `ping` runtime error unrelated to capabilities. Check the error output for details.
 
 #### If verification fails
 
