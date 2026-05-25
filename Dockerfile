@@ -92,6 +92,10 @@ RUN apt-get update && apt-get upgrade -y \
       # FIXME: provide a default hosts file adequate for the network address/hostname
       # FIXME: chekc if oh-my-zsh could be installed together with some cool theme
 
+# install the macOS/podman ICMP sanity-check helper (see README "macOS networking caveats")
+COPY scripts/icmp-sanity-check /usr/local/bin/icmp-sanity-check
+RUN chmod 0755 /usr/local/bin/icmp-sanity-check
+
 # switch to the non-root user
 USER $USERNAME
 

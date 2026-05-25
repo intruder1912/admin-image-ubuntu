@@ -79,6 +79,22 @@ podman run --rm localhost/adminubuntu:latest -c "kubectl version --client && ter
 
 All three commands must exit successfully. If any fail, fix the issue and re-run the full build before continuing.
 
+#### Optional: ICMP sanity check (macOS developers)
+
+This step is **informational only** and does **not** gate the build. It verifies whether ICMP behaves correctly inside the container or is being intercepted by `gvproxy` on macOS.
+
+```sh
+podman run --rm --cap-add net_raw --network host \
+    localhost/adminubuntu:latest -c "icmp-sanity-check"
+```
+
+Expected outcomes:
+
+- **macOS host:** exit code `1`, warning printed → confirms the documented `gvproxy` behaviour. This is **not** a regression. See the "macOS networking caveats" section in `README.md` for reliable alternatives.
+- **Linux host:** exit code `0` → ICMP behaves correctly.
+- **Exit code `2` anywhere:** `CAP_NET_RAW` is missing. Ensure `--cap-add net_raw` is present.
+- **Exit code `3` anywhere:** unexpected `ping` runtime error unrelated to capabilities. Check the error output for details.
+
 #### If verification fails
 
 - Fix the problem in the implementation.
