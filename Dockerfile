@@ -1,5 +1,5 @@
 # kubectl image is used to install kubectl (put into the build cache)
-FROM registry.k8s.io/kubectl:v1.36.4 AS kubectl
+FROM registry.k8s.io/kubectl:v1.37.0 AS kubectl
 
 # actual base image for the container
 FROM ubuntu:26.04
