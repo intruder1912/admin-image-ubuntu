@@ -76,7 +76,8 @@ RUN apt-get update && apt-get upgrade -y \
       # map Docker's TARGETARCH (amd64/arm64) to the AWS CLI archive naming (x86_64/aarch64)
       && AWS_ARCH=$([ "$TARGETARCH" = "amd64" ] && echo "x86_64" || echo "aarch64") \
       && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip" -o awscliv2.zip \
-      && npm i -g aws-cdk \
+      # call npm through node directly: rust-coreutils' `env` (the `#!/usr/bin/env node` shebang) aborts under QEMU emulation (arm64 on amd64 runners)
+      && node "$(readlink -f "$(command -v npm)")" i -g aws-cdk \
       && unzip awscliv2.zip \
       && ./aws/install \
       # add a non-root user with the above specified parameters
