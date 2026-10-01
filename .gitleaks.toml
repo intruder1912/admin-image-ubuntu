@@ -1,0 +1,12 @@
+title = "admin-image-ubuntu gitleaks config"
+
+[extend]
+useDefault = true
+
+# the Dockerfile pins the fingerprints of the vendors' public signing keys (HashiCorp apt
+# key, AWS CLI key) so downloads can be verified; they are public identifiers, not secrets
+[[allowlists]]
+description = "pinned public key fingerprints in the Dockerfile"
+paths = ['''^Dockerfile$''']
+regexTarget = "line"
+regexes = ['''ARG (HASHICORP_APT_KEY_FPR|AWSCLI_KEY_FPR)=[0-9A-F]{40}\s*$''']
