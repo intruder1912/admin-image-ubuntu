@@ -1,7 +1,4 @@
-# kubectl image is used to install kubectl (put into the build cache)
-FROM registry.k8s.io/kubectl:v1.37.0 AS kubectl
-
-# actual base image for the container
+# base image for the container
 FROM ubuntu:26.04
 LABEL doblander.org:image-use=admin
 
@@ -117,8 +114,19 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" \
       && echo "$USERNAME" ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/"$USERNAME" \
       && chmod 0440 /etc/sudoers.d/"$USERNAME"
 
-# install kubectl by copying the binary from the kubectl image (kept late: it is bumped most often)
-COPY --from=kubectl /bin/kubectl /usr/local/bin/
+# install kubectl from the official release artifacts (kept late: it is bumped most often)
+# the version comes from tools/kubectl/go.mod, which Dependabot (gomod ecosystem) keeps up to date:
+# k8s.io/kubectl v0.N.P is the Go module tag of kubectl v1.N.P. the binary is checked against the
+# sha256 that dl.k8s.io publishes next to it (TARGETARCH amd64/arm64 matches the dl.k8s.io naming)
+COPY tools/kubectl/go.mod /tmp/kubectl-go.mod
+RUN MODULE_VERSION="$(awk '{ for (i = 1; i < NF; i++) if ($i == "k8s.io/kubectl") { print $(i + 1); exit } }' /tmp/kubectl-go.mod)" \
+      && { echo "$MODULE_VERSION" | grep -Eqx 'v0\.[0-9]+\.[0-9]+' || { echo "expected k8s.io/kubectl v0.N.P in tools/kubectl/go.mod, got: '${MODULE_VERSION}'"; exit 1; }; } \
+      && KUBECTL_URL="https://dl.k8s.io/release/v1.${MODULE_VERSION#v0.}/bin/linux/${TARGETARCH}/kubectl" \
+      && curl -fsSL "$KUBECTL_URL" -o /usr/local/bin/kubectl \
+      && curl -fsSL "${KUBECTL_URL}.sha256" -o /tmp/kubectl.sha256 \
+      && echo "$(cat /tmp/kubectl.sha256)  /usr/local/bin/kubectl" | sha256sum -c - \
+      && chmod 0755 /usr/local/bin/kubectl \
+      && rm -f /tmp/kubectl-go.mod /tmp/kubectl.sha256
 
       # FIXME: provide a defailt zsh profile
       # FIXME: provide a default hosts file adequate for the network address/hostname

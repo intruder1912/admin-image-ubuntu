@@ -22,6 +22,15 @@ updates:
     cooldown:
       default-days: 7
 
+  # tools/kubectl/go.mod pins the kubectl version the Dockerfile downloads
+  # (module k8s.io/kubectl v0.N.P is kubectl v1.N.P)
+  - package-ecosystem: "gomod"
+    directory: "/tools/kubectl"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
