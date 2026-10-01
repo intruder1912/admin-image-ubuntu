@@ -1,0 +1,14 @@
+# Default owner for everything
+*                                   @intruder1912
+
+# Files that steer the build, the CI pipeline, or AI coding agents deserve
+# explicit review; list them so they stay owned even if the default changes.
+/Dockerfile                         @intruder1912
+/scripts/                           @intruder1912
+/.github/workflows/                 @intruder1912
+/.github/dependabot.yml             @intruder1912
+/.github/copilot-instructions.md    @intruder1912
+/AGENTS.md                          @intruder1912
+/CLAUDE.md                          @intruder1912
+/SECURITY.md                        @intruder1912
+/LICENSE                            @intruder1912

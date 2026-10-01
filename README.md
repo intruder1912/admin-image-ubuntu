@@ -5,6 +5,15 @@ an image based on ubuntu for use as an admin machine to keep my MacBook as clean
 **NOTE**:
 make sure to understand the difference between local images (build locally with the below build command) and the automatically created (on all main commits), an image potentially stored on DockerHub, and an image stored in the GitHub container registry. especially, make sure to select the right "platform" when the released container image is a multi-platform image.
 
+## intended use
+
+this is a personal admin toolbox, not a hardened or minimal image. it is meant to be run interactively, on machines and networks you are authorised to administer. keep in mind:
+
+- the default user ```intruder``` (UID 1001) has passwordless ```sudo```. do not reuse this pattern for services or production workloads.
+- the image ships network and security tools (```nmap```, ```tcpdump```, ```tshark```, ```arp-scan```, ```socat```, ...). only point them at systems you own or have permission to test.
+- no credentials are baked into the image. pass cloud/cluster credentials at runtime (mounted config or environment) and never commit them.
+- the published image is currently **private** (see "using the GitHub container registry"). to use the image, build it yourself from the ```Dockerfile```.
+
 ## using the local image repository
 
 ### for network administration
@@ -97,11 +106,9 @@ this still goes through the VM's stack but avoids the container-side ```gvproxy`
 
 ## using the GitHub container registry
 
-first, one needs to login to the GitHub registry.
+**NOTE:** the image published to GHCR (```ghcr.io/intruder1912/admin-image-ubuntu```) is **private**. only the repository owner can pull it; everyone else should build the image locally (see "using the local image repository"). the instructions below are for the owner.
 
-***CAUTION!*** the login code is still work in progress and doesn't work yet and the whole section on using the GitHub registry is still not fully tested (image pull results in an error that could potentially be due to platform mismatch).
-
-for logging into the GitHub container registry (GHCR), it is necessary to create a personal access token on GitHub with the necessary permissions ("read:packages", "write:packages", "delete:packages"--any of those or all, depending on your specific needs)
+first, one needs to login to the GitHub registry. for logging into the GitHub container registry (GHCR), it is necessary to create a personal access token on GitHub with the necessary permissions ("read:packages", "write:packages", "delete:packages"--any of those or all, depending on your specific needs)
 
 ```bash
 export GHCR_TOKEN=<your-gh-token-with-permissions>
@@ -116,10 +123,14 @@ podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --c
     -ti ghcr.io/intruder1912/admin-image-ubuntu:latest
 ```
 
-variant without a propper tag (latest), so one has to use a digest:
+variant without a proper tag (latest), so one has to use a digest:
 
 ```bash
 podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --cap-add net_admin \
     --rm --name netadmincontainer \
-    -ti ghcr.io/intruder1912/admin-image-ubuntu@sha256:71e9fffd81236d72c3b6046399115bc57e7df262a71cd2d627315f5979c59a68
+    -ti ghcr.io/intruder1912/admin-image-ubuntu@sha256:<digest>
 ```
+
+## license and security
+
+released under the [MIT License](LICENSE). to report a vulnerability, follow [SECURITY.md](SECURITY.md).
