@@ -12,7 +12,7 @@ this is a personal admin toolbox, not a hardened or minimal image. it is meant t
 - the default user ```intruder``` (UID 1001) has passwordless ```sudo```. do not reuse this pattern for services or production workloads.
 - the image ships network and security tools (```nmap```, ```tcpdump```, ```tshark```, ```arp-scan```, ```socat```, ...). only point them at systems you own or have permission to test.
 - no credentials are baked into the image. pass cloud/cluster credentials at runtime (mounted config or environment) and never commit them.
-- the published image is currently **private** (see "using the GitHub container registry"). to use the image, build it yourself from the ```Dockerfile```.
+- the image is published to the GitHub container registry and signed, see "using the GitHub container registry" for how to pull it and how to verify the signature. you can also build it yourself from the ```Dockerfile```.
 
 ## using the local image repository
 
@@ -106,16 +106,7 @@ this still goes through the VM's stack but avoids the container-side ```gvproxy`
 
 ## using the GitHub container registry
 
-**NOTE:** the image published to GHCR (```ghcr.io/intruder1912/admin-image-ubuntu```) is **private**. only the repository owner can pull it; everyone else should build the image locally (see "using the local image repository"). the instructions below are for the owner.
-
-first, one needs to login to the GitHub registry. for logging into the GitHub container registry (GHCR), it is necessary to create a personal access token on GitHub with the necessary permissions ("read:packages", "write:packages", "delete:packages"--any of those or all, depending on your specific needs)
-
-```bash
-export GHCR_TOKEN=<your-gh-token-with-permissions>
-echo $GHCR_TOKEN | podman login ghcr.io -u intruder1912 --password-stdin
-```
-
-to pull the image from GitHub without building it locally before, use the following code (works only if the image has the "latest" tag; if not, one must use the specific sha digest to be found directly on GitHub):
+the image is published to the GitHub container registry as a multi-platform image (```linux/amd64``` and ```linux/arm64```) and can be pulled without logging in:
 
 ```bash
 podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --cap-add net_admin \
@@ -123,13 +114,28 @@ podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --c
     -ti ghcr.io/intruder1912/admin-image-ubuntu:latest
 ```
 
-variant without a proper tag (latest), so one has to use a digest:
+```latest``` (also tagged ```main```) follows the main branch; only the most recent builds are kept in the registry. to pin a specific build use its digest, which is shown on the package page:
 
 ```bash
 podman run --platform="linux/arm64" --hostname="adminhost" --cap-add net_raw --cap-add net_admin \
     --rm --name netadmincontainer \
     -ti ghcr.io/intruder1912/admin-image-ubuntu@sha256:<digest>
 ```
+
+### verify the image
+
+every image pushed from the main branch is signed with [cosign](https://github.com/sigstore/cosign) (keyless, using the GitHub Actions identity of this repository's ```docker-publish``` workflow) and the signature is recorded in the public sigstore transparency log. to check that an image was built by this repository's workflow:
+
+```bash
+cosign verify \
+    --certificate-identity-regexp '^https://github.com/intruder1912/admin-image-ubuntu/.github/workflows/docker-publish.yml@.*' \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    ghcr.io/intruder1912/admin-image-ubuntu:latest
+```
+
+a successful run prints the verified signature claims; any other result means the image should not be trusted. cosign prefers digests over tags, so verify the exact digest you run (```...admin-image-ubuntu@sha256:<digest>```).
+
+pushing to or deleting from the registry needs a personal access token with the matching package scopes ("write:packages", "delete:packages"); in practice only this repository's workflows do that.
 
 ## license and security
 
