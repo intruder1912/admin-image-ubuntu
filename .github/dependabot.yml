@@ -4,21 +4,9 @@
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
-
-# Dependabot update jobs may only reach allowlisted hosts. the Dockerfile pulls the
-# kubectl binary from registry.k8s.io, which is not on that list unless it is
-# declared here (even though it allows anonymous pulls); without this the docker
-# update job fails with "private_source_authentication_failure"
-registries:
-  k8s-registry:
-    type: docker-registry
-    url: https://registry.k8s.io
-
 updates:
   - package-ecosystem: "docker" # See documentation for possible values
     directory: "/" # Location of package manifests
-    registries:
-      - k8s-registry
     schedule:
       interval: "weekly"
     # wait before proposing brand-new releases (guards against compromised
@@ -29,6 +17,15 @@ updates:
   # tools/aws-cdk/package.json pins the aws-cdk version the Dockerfile installs
   - package-ecosystem: "npm"
     directory: "/tools/aws-cdk"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+
+  # tools/kubectl/go.mod pins the kubectl version the Dockerfile downloads
+  # (module k8s.io/kubectl v0.N.P is kubectl v1.N.P)
+  - package-ecosystem: "gomod"
+    directory: "/tools/kubectl"
     schedule:
       interval: "weekly"
     cooldown:
