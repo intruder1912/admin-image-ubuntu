@@ -17,5 +17,10 @@ jobs:
         with:
           package-name: ${{ github.event.repository.name }}
           package-type: 'container'  # or 'npm', 'maven', etc.
-          min-versions-to-keep: 12
+          # one published build is 11 package "versions" (image index, per-platform manifests,
+          # attestations, signatures), so keep the two newest builds (latest + the one before)
+          # and let a run delete up to 5 old builds; the action default of 1 version per run
+          # never caught up with the number of versions a build creates
+          min-versions-to-keep: 22
+          num-old-versions-to-delete: 55
           token: ${{ secrets.GITHUB_TOKEN }}
