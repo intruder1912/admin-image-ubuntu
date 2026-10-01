@@ -17,6 +17,8 @@ Thank you for contributing to this project! Follow the engineering workflow in `
 
 If anything is unclear, please ask before proceeding.
 
+**External contributors:** fork the repository, work on a branch in your fork, and open the pull request from there (step 6 pushes to *your* fork). Pull requests need maintainer review and passing CI before they are merged; changes to the `Dockerfile`, workflows, `AGENTS.md` and other agent instruction files are reviewed by the code owner (see `.github/CODEOWNERS`). Report security issues privately as described in `SECURITY.md`, not in a pull request.
+
 ---
 
 ## Branch Naming
