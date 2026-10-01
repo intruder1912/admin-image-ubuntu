@@ -58,7 +58,7 @@ Write commits in [conventional commit](https://www.conventionalcommits.org/) for
 
 ## Dependabot Configuration
 
-This repository uses [Dependabot](https://docs.github.com/en/code-security/dependabot) to keep Docker base images and GitHub Actions workflows up to date automatically.
+This repository uses [Dependabot](https://docs.github.com/en/code-security/dependabot) to keep Docker base images, GitHub Actions workflows and the pinned `aws-cdk` version (`tools/aws-cdk/package.json`, read by the `Dockerfile`) up to date automatically.
 
 **When updating dependencies:**
 1. Edit `.github/dependabot.yml` to include the relevant package ecosystem (e.g., `docker`, `github-actions`)
