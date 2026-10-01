@@ -7,21 +7,13 @@ LABEL doblander.org:image-use=admin
 
 #ENV USER=root
 
-# define the non-root user
-ARG USERNAME=intruder
-ARG USER_UID=1001
-ARG USER_GID=$USER_UID
+# Layers are ordered from least to most frequently changing so a change late in
+# the file (e.g. a kubectl bump) does not invalidate the heavy layers above it.
+# `apt-get upgrade` is cached with its layer; the scheduled CI build runs with
+# no-cache to pick up fresh package versions.
 
-# expose the build-time target architecture so we can select the correct AWS CLI binary
-ARG TARGETARCH
-
-# download the hashicorp gpg key
-ADD "https://apt.releases.hashicorp.com/gpg" "hashicorp"
-
-# install kubectl by copying the binary from the kubectl image leveraging multi-stage builds (kubectl image in the cache)
-COPY --from=kubectl /bin/kubectl /usr/local/bin/
+# install basic tools
 RUN apt-get update && apt-get upgrade -y \
-      # install basic tools
       && apt-get install -y \
          arp-scan \
          atop \
@@ -64,30 +56,45 @@ RUN apt-get update && apt-get upgrade -y \
          wget \
          yq \
          zsh \
-      # install terraform
-      && gpg --dearmor hashicorp \
-      && cp hashicorp.gpg /usr/share/keyrings/hashicorp-archive-keyring.gpg \
-      && gpg --no-default-keyring --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg --fingerprint \  
+      && apt-get clean \
+      && rm -rf /var/lib/apt/lists/*
+
+# install terraform
+ADD "https://apt.releases.hashicorp.com/gpg" "/tmp/hashicorp"
+RUN gpg --dearmor /tmp/hashicorp \
+      && cp /tmp/hashicorp.gpg /usr/share/keyrings/hashicorp-archive-keyring.gpg \
+      && gpg --no-default-keyring --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg --fingerprint \
       && echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list \
       && apt-get update \
-      && apt-get install -y \
-        terraform \
-      # install aws-cdk and aws-cli
-      # map Docker's TARGETARCH (amd64/arm64) to the AWS CLI archive naming (x86_64/aarch64)
-      && AWS_ARCH=$([ "$TARGETARCH" = "amd64" ] && echo "x86_64" || echo "aarch64") \
+      && apt-get install -y terraform \
+      && rm -f /tmp/hashicorp /tmp/hashicorp.gpg \
+      && apt-get clean \
+      && rm -rf /var/lib/apt/lists/*
+
+# install aws-cli
+# TARGETARCH (amd64/arm64) is set by buildx; map it to the AWS CLI archive naming (x86_64/aarch64)
+ARG TARGETARCH
+RUN AWS_ARCH=$([ "$TARGETARCH" = "amd64" ] && echo "x86_64" || echo "aarch64") \
       && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip" -o awscliv2.zip \
-      # call npm through node directly: rust-coreutils' `env` (the `#!/usr/bin/env node` shebang) aborts under QEMU emulation (arm64 on amd64 runners)
-      && node "$(readlink -f "$(command -v npm)")" i -g aws-cdk \
-      && unzip awscliv2.zip \
+      && unzip -q awscliv2.zip \
       && ./aws/install \
-      # add a non-root user with the above specified parameters
-      && groupadd --gid "$USER_GID" "$USERNAME" \
+      && rm -rf awscliv2.zip aws
+
+# install aws-cdk
+# call npm through node directly: rust-coreutils' `env` (the `#!/usr/bin/env node` shebang) aborts under QEMU emulation (arm64 on amd64 runners)
+RUN node "$(readlink -f "$(command -v npm)")" i -g aws-cdk
+
+# add a non-root user
+ARG USERNAME=intruder
+ARG USER_UID=1001
+ARG USER_GID=$USER_UID
+RUN groupadd --gid "$USER_GID" "$USERNAME" \
       && useradd --uid "$USER_UID" --gid "$USER_GID" -m "$USERNAME" \
       && echo "$USERNAME" ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/"$USERNAME" \
-      && chmod 0440 /etc/sudoers.d/"$USERNAME" \
-      # clean up and minimize the image size
-      && apt-get clean \ 
-      && rm -rf /var/lib/apt/lists/* 
+      && chmod 0440 /etc/sudoers.d/"$USERNAME"
+
+# install kubectl by copying the binary from the kubectl image (kept late: it is bumped most often)
+COPY --from=kubectl /bin/kubectl /usr/local/bin/
 
       # FIXME: provide a defailt zsh profile
       # FIXME: provide a default hosts file adequate for the network address/hostname
