@@ -14,6 +14,14 @@ updates:
     cooldown:
       default-days: 7
 
+  # tools/aws-cdk/package.json pins the aws-cdk version the Dockerfile installs
+  - package-ecosystem: "npm"
+    directory: "/tools/aws-cdk"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

@@ -1,0 +1,8 @@
+{
+  "name": "aws-cdk-pin",
+  "private": true,
+  "description": "Pins the aws-cdk version installed by the Dockerfile; exists so Dependabot (npm ecosystem) can propose updates",
+  "dependencies": {
+    "aws-cdk": "2.1144.0"
+  }
+}
