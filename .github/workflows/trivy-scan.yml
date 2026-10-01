@@ -21,8 +21,19 @@ jobs:
             exit 1
           fi
       
+      # Buildx (instead of plain `docker build`) so the scan can reuse the layer
+      # cache populated by the Docker publish workflow (read-only, no cache-to).
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
       - name: Build an image from Dockerfile
-        run: docker build -t ${{ env.IMAGE_NAME }} .
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          push: false
+          tags: ${{ env.IMAGE_NAME }}
+          cache-from: type=gha
       
       - name: Run Trivy vulnerability scan - Full report (but no CI fail)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # corresponds to v0.36.0
