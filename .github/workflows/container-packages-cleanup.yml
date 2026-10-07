@@ -19,8 +19,7 @@ jobs:
           package-type: 'container'  # or 'npm', 'maven', etc.
           # one published build is 11 package "versions" (image index, per-platform manifests,
           # attestations, signatures), so keep the two newest builds (latest + the one before)
-          # and let a run delete up to 5 old builds; the action default of 1 version per run
-          # never caught up with the number of versions a build creates
+          # and delete everything older in one run. Do not add num-old-versions-to-delete:
+          # the action rejects it in combination with min-versions-to-keep ("Invalid input combination")
           min-versions-to-keep: 22
-          num-old-versions-to-delete: 55
           token: ${{ secrets.GITHUB_TOKEN }}
