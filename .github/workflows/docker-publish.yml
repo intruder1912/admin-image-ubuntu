@@ -28,6 +28,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build-and-push.outputs.digest }}
     permissions:
       contents: read
       packages: write
@@ -89,20 +91,26 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
+          # PRs hand the single amd64 build to the Trivy job as a tarball instead of
+          # building it a second time there
+          outputs: ${{ github.event_name == 'pull_request' && 'type=docker,dest=/tmp/image.tar' || '' }}
           # PRs only validate the build on amd64 (arm64 runs under QEMU and is the
           # slowest part); main, tags and the schedule build both platforms.
           platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ github.event_name == 'pull_request' && format('{0}/{1}:scan', env.REGISTRY, env.IMAGE_NAME) || '' }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          # one explicit scope shared by every event; `ignore-error` keeps a cache
+          # service hiccup or a full quota from failing the build or publish
+          cache-from: type=gha,scope=build
           # the scheduled run exists to pick up fresh packages: bypass the cached
           # `apt-get upgrade` layer and re-pull base images
           no-cache: ${{ github.event_name == 'schedule' }}
           pull: ${{ github.event_name == 'schedule' }}
           # PRs read the cache but don't write it, to stay within the 10 GB repo quota
-          cache-to: ${{ github.event_name != 'pull_request' && 'type=gha,mode=max' || '' }}
+          cache-to: ${{ github.event_name != 'pull_request' && 'type=gha,scope=build,mode=max,ignore-error=true' || '' }}
 
       # Sign the resulting Docker image digest except on PRs.
       # Keyless signing records the signature in the public Rekor transparency log,
@@ -118,3 +126,81 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
         run: echo "${TAGS}" | xargs -I {} cosign sign --yes "{}@${DIGEST}"
+
+      - name: Upload image for the Trivy scan
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: image
+          path: /tmp/image.tar
+          retention-days: 1
+          if-no-files-found: error
+
+  # Scans the image the build job produced instead of rebuilding it: the tarball on
+  # PRs, the pushed digest everywhere else. The job name is a required status check.
+  trivy-scan:
+    name: Trivy Scan
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Download image
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: image
+          path: /tmp
+
+      - name: Load image
+        if: ${{ github.event_name == 'pull_request' }}
+        run: docker load --input /tmp/image.tar
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Select image to scan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DIGEST: ${{ needs.build.outputs.digest }}
+        run: |
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            echo "IMAGE_REF=${REGISTRY}/${IMAGE_NAME}:scan" >> "${GITHUB_ENV}"
+          else
+            echo "IMAGE_REF=${REGISTRY}/${IMAGE_NAME}@${DIGEST}" >> "${GITHUB_ENV}"
+          fi
+
+      - name: Run Trivy vulnerability scan - Full report (but no CI fail)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # corresponds to v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          # produce a machine-readable report including HIGH and CRITICAL, do NOT set exit-code here
+          format: 'json'
+          vuln-type: 'os,library'
+          output: 'trivy-report.json'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy JSON report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          # the CVE list is only needed to look into a failing scan; artifacts of a public repo are downloadable by any signed-in user
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Run Trivy vulnerability scan - Fail on CRITICAL vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # corresponds to v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          format: 'table'
+          ignore-unfixed: true
+          exit-code: '1'
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
